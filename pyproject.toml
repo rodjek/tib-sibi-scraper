@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "sibi-scraper"
+version = "0.1.0"
+description = ""
+authors = ["Tim Sharpe <tim@sharpe.id.au>"]
+readme = "README.md"
+packages = [{include = "sibi_scraper"}]
+
+[tool.poetry.scripts]
+sibi_scraper = "sibi_scraper.cli:main"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+requests = "^2.31.0"
+googletrans-py = "^4.0.0"
+pypdf2 = "^3.0.1"
+
+[tool.poetry.group.dev.dependencies]
+pylint = "^2.17.5"
+ipdb = "^0.13.13"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,5 @@
+/__pycache__/
+/book_list.csv
+/books/
+/poetry.lock
+*.pyc
