@@ -23,7 +23,7 @@ class Book:
     ]
 
     def __init__(self, title=None, level=None, isbn=None, edition=None,
-                 file=None, english_title=None, pages=None):
+                 file=None, english_title=None, pages=None, append=True):
         """
         Initialise a Book from known values.
         """
@@ -39,7 +39,8 @@ class Book:
         if not self.english_title:
             self.translate_title()
 
-        self.book_list.append(self)
+        if append:
+            self.book_list.append(self)
 
     @classmethod
     def from_api(cls, json_blob, level):
@@ -52,6 +53,7 @@ class Book:
             isbn=json_blob['isbn'],
             edition=json_blob['edition'],
             file=json_blob['attachment'],
+            append=False,
         )
 
         if new_book.download_file(level):
