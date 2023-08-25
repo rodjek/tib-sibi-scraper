@@ -70,7 +70,7 @@ class Book:
         with open(path, 'r', newline='', encoding='utf-8') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
-                b = cls(
+                cls(
                     title=row['Book List Title'],
                     level=row['Level'],
                     isbn=row['ISBN'],
@@ -79,7 +79,6 @@ class Book:
                     pages=row['Pages'],
                     english_title=row['English Title'],
                 )
-                cls.book_list.append(b)
 
     @classmethod
     def save_book_list(cls, path):
