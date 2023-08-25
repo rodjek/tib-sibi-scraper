@@ -2,6 +2,7 @@
 import csv
 import googletrans
 import os
+import urllib.parse
 from PyPDF2 import PdfReader
 from sibi_scraper.web import Session
 
@@ -115,7 +116,7 @@ class Book:
         return dict(zip(self._csv_fields, values))
 
     def download_file(self, level):
-        filename = os.path.basename(self.file)
+        filename = os.path.basename(urllib.parse.unquote(self.file))
         local_path = os.path.join("books", level, filename)
         download_dir = os.path.dirname(local_path)
 
