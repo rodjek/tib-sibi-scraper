@@ -126,13 +126,13 @@ class Book:
         if response.ok:
             with open(local_path, "wb") as local_file:
                 local_file.write(response.content)
-            self.file = local_path
-            self.pages = self.get_book_length()
+            self.file = filename
+            self.pages = self.get_book_length(local_path)
             return True
         else:
             print(f"Unable to download {self.file}")
             return False
 
-    def get_book_length(self):
-        reader = PdfReader(self.file)
+    def get_book_length(self, path):
+        reader = PdfReader(path)
         return len(reader.pages)
