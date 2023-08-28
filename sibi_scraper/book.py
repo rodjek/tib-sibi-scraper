@@ -3,6 +3,8 @@ import csv
 import googletrans
 import os
 import urllib.parse
+import logging
+import httpx
 from PyPDF2 import PdfReader
 from sibi_scraper.web import Session
 
@@ -15,7 +17,7 @@ class Book:
     book_list = []
     _csv_fields = [
         'Book List Title',
-        'Level',
+        'Class',
         'ISBN',
         'Edition',
         'File Name',
@@ -23,7 +25,7 @@ class Book:
         'English Title',
     ]
 
-    def __init__(self, title=None, level=None, isbn=None, edition=None,
+    def __init__(self, title=None, class_=None, isbn=None, edition=None,
                  file=None, english_title=None, pages=None, append=True):
         """
         Initialise a Book from known values.
@@ -31,7 +33,7 @@ class Book:
 
         self.title = title
         self.english_title = english_title
-        self.level = level
+        self.class_ = class_
         self.isbn = isbn
         self.edition = edition
         self.file = file
@@ -44,21 +46,24 @@ class Book:
             self.book_list.append(self)
 
     @classmethod
-    def from_api(cls, json_blob, level):
+    def from_api(cls, json_blob):
         """
         Initialise a Book from the result of a SIBI API query and download it.
         """
         new_book = cls(
             title=json_blob['title'],
-            level=json_blob['level'],
+            class_=json_blob['class'],
             isbn=json_blob['isbn'],
             edition=json_blob['edition'],
             file=json_blob['attachment'],
             append=False,
         )
 
-        if new_book.download_file(level):
-            cls.book_list.append(new_book)
+        try:
+            if new_book.download_file():
+                cls.book_list.append(new_book)
+        except httpx.ReadTimeout:
+            logging.warning(f"Timed out downloading {json_blob['attachment']}")
 
         return new_book
 
@@ -72,7 +77,7 @@ class Book:
             for row in reader:
                 cls(
                     title=row['Book List Title'],
-                    level=row['Level'],
+                    class_=row['Class'],
                     isbn=row['ISBN'],
                     edition=row['Edition'],
                     file=row['File Name'],
@@ -104,7 +109,7 @@ class Book:
     def to_csv(self):
         values = [
             self.title,
-            self.level,
+            self.class_,
             self.isbn,
             self.edition,
             self.file,
@@ -114,9 +119,9 @@ class Book:
 
         return dict(zip(self._csv_fields, values))
 
-    def download_file(self, level):
+    def download_file(self):
         filename = os.path.basename(urllib.parse.unquote(self.file))
-        local_path = os.path.join("books", level, filename)
+        local_path = os.path.join("books", self.class_, filename)
         download_dir = os.path.dirname(local_path)
 
         if not os.path.isdir(download_dir):

@@ -5,39 +5,39 @@ from sibi_scraper.web import Session
 
 
 class Scraper:
-    LEVELS = ["all", "paud", "sd", "smp", "sma"]
+    CLASSES = ["all"] + [str(i) for i in range(1, 13)]
     api_host = "https://api.buku.kemdikbud.go.id"
     api_endpoint = f"{api_host}/api/catalogue/getPenggerakTextBooks"
 
-    def __init__(self, level, book_list_file):
+    def __init__(self, classes, book_list_file):
         self.book_list_file = book_list_file
 
-        if level == "all":
-            self.level = self.LEVELS[1:]
+        if classes == "all":
+            self.classes = self.CLASSES[1:]
         else:
-            self.level = [level]
+            self.classes = [classes]
 
     def run(self):
         Book.load_book_list(self.book_list_file)
 
-        for i in self.level:
-            found_books = self.search_for_books(i)
+        for class_ in self.classes:
+            found_books = self.search_for_books(class_)
 
             for r in found_books['results']:
                 if not Book.exists(r['title']):
                     logging.info(f"New book {r['title']!r}")
-                    Book.from_api(r, i)
+                    Book.from_api(r)
                     time.sleep(10)
 
         Book.save_book_list(self.book_list_file)
 
-    def search_for_books(self, level):
+    def search_for_books(self, class_):
         response = Session().session.get(
             self.api_endpoint,
             params={
                 "limit": 2000,
                 "type_pdf": "",
-                f"level_{level}": "",
+                f"class_{class_}": "",
             }
         )
 
