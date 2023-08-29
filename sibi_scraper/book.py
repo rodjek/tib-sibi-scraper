@@ -4,7 +4,7 @@ import os
 import urllib.parse
 import googletrans
 import httpx
-from PyPDF2 import PdfReader
+import PyPDF2
 from sibi_scraper.web import Session
 
 
@@ -120,7 +120,8 @@ class Book:
         Returns
         -------
         bool
-            True if the file was downloaded successfully, otherwise False.
+            True if the file was downloaded and opened successfully, otherwise
+            False.
 
         """
         filename = os.path.basename(urllib.parse.unquote(self.file))
@@ -133,13 +134,19 @@ class Book:
         response = Session().session.get(self.file)
 
         if not response.ok:
-            print(f"Unable to download {self.file}")
+            logging.warning("Unable to download: %s", self.file)
             return False
 
         with open(local_path, "wb") as local_file:
             local_file.write(response.content)
+
+        try:
+            self.pages = self.get_book_length(local_path)
+        except PyPDF2.errors.PdfReadError:
+            logging.warning("Corrupt PDF: %s", self.file)
+            return False
+
         self.file = filename
-        self.pages = self.get_book_length(local_path)
         return True
 
     def get_book_length(self, path):
@@ -156,5 +163,5 @@ class Book:
             The number of pages in the PDF.
 
         """
-        reader = PdfReader(path)
+        reader = PyPDF2.PdfReader(path)
         return len(reader.pages)
