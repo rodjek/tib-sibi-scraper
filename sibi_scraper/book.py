@@ -1,34 +1,56 @@
 # pylint: disable=too-many-arguments
-import csv
-import googletrans
+import logging
 import os
 import urllib.parse
-import logging
+import googletrans
 import httpx
 from PyPDF2 import PdfReader
 from sibi_scraper.web import Session
 
 
 class Book:
-    """
-    A book that has been scraped from SIBI.
-    """
+    """A book that has been scraped from SIBI.
 
-    book_list = []
-    _csv_fields = [
-        'Book List Title',
-        'Class',
-        'ISBN',
-        'Edition',
-        'File Name',
-        'Pages',
-        'English Title',
-    ]
+    Attributes
+    ----------
+    class_ : str
+        The school class that the book is for.
+    edition : str
+        The edition of the book.
+    english_title : str
+        The title of the book, translated into English.
+    file : str
+        The filename of the downloaded book.
+    isbn : str
+        The ISBN of the book (if published).
+    pages : str
+        The number of pages in the book.
+    title : str
+        The title of the book.
+
+    """
 
     def __init__(self, title=None, class_=None, isbn=None, edition=None,
-                 file=None, english_title=None, pages=None, append=True):
-        """
-        Initialise a Book from known values.
+                 file=None, english_title=None, pages=None):
+        """Initialise a Book from known values.
+
+        Parameters
+        ----------
+        class_ : str
+            The school class that the book is for.
+        edition : str
+            The edition of the book.
+        english_title : str
+            The title of the book, translated into English.
+        file : str
+            The filename of the downloaded book.
+        isbn : str
+            The ISBN of the book (if published).
+        pages : str
+            The number of pages in the book.
+        title : str
+            The title of the book.
+
         """
 
         self.title = title
@@ -39,16 +61,26 @@ class Book:
         self.file = file
         self.pages = pages
 
-        if not self.english_title:
-            self.translate_title()
-
-        if append:
-            self.book_list.append(self)
-
     @classmethod
     def from_api(cls, json_blob):
         """
-        Initialise a Book from the result of a SIBI API query and download it.
+        Initialise a Book from the result of a SIBI API query.
+
+        After initialisation the title is translated into English, the book PDF
+        is downloaded, and the number of pages in the PDF is counted.
+
+        Parameters
+        ----------
+        json_blob : dict
+            A dictionary of values representing a Book as returned by an API
+            call from SIBI.
+
+        Returns
+        -------
+        obj:`sibi_scraper.book.Book` or None
+            Returns the initialised Book object if the download was successful,
+            otherwise None.
+
         """
         new_book = cls(
             title=json_blob['title'],
@@ -56,48 +88,20 @@ class Book:
             isbn=json_blob['isbn'],
             edition=json_blob['edition'],
             file=json_blob['attachment'],
-            append=False,
         )
+
+        new_book.translate_title()
 
         try:
             if new_book.download_file():
-                cls.book_list.append(new_book)
+                return new_book
         except httpx.ReadTimeout:
-            logging.warning(f"Timed out downloading {json_blob['attachment']}")
-
-        return new_book
-
-    @classmethod
-    def load_book_list(cls, path):
-        if not os.path.isfile(path):
-            return
-
-        with open(path, 'r', newline='', encoding='utf-8') as csvfile:
-            reader = csv.DictReader(csvfile)
-            for row in reader:
-                cls(
-                    title=row['Book List Title'],
-                    class_=row['Class'],
-                    isbn=row['ISBN'],
-                    edition=row['Edition'],
-                    file=row['File Name'],
-                    pages=row['Pages'],
-                    english_title=row['English Title'],
-                )
-
-    @classmethod
-    def save_book_list(cls, path):
-        with open(path, 'w', newline='', encoding='utf-8') as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=cls._csv_fields)
-            writer.writeheader()
-            for book in cls.book_list:
-                writer.writerow(book.to_csv())
-
-    @classmethod
-    def exists(cls, book_title):
-        return any(filter(lambda r: r.title == book_title, cls.book_list))
+            logging.warning("Timed out downloading %s",
+                            json_blob['attachment'])
+        return None
 
     def translate_title(self):
+        """Translate the title to English using Google Translate."""
         translator = googletrans.Translator()
         self.english_title = translator.translate(
             self.title, src='id', dest='en').text
@@ -106,20 +110,19 @@ class Book:
         class_name = type(self).__name__
         return f"{class_name}(title={self.title!r})"
 
-    def to_csv(self):
-        values = [
-            self.title,
-            self.class_,
-            self.isbn,
-            self.edition,
-            self.file,
-            self.pages,
-            self.english_title,
-        ]
-
-        return dict(zip(self._csv_fields, values))
-
     def download_file(self):
+        """Download the book PDF.
+
+        The PDF will be downloaded to a folder relative to the current working
+        directory as follows:
+            {CWD}/books/{class_}/{filename}
+
+        Returns
+        -------
+        bool
+            True if the file was downloaded successfully, otherwise False.
+
+        """
         filename = os.path.basename(urllib.parse.unquote(self.file))
         local_path = os.path.join("books", self.class_, filename)
         download_dir = os.path.dirname(local_path)
@@ -128,16 +131,30 @@ class Book:
             os.makedirs(download_dir)
 
         response = Session().session.get(self.file)
-        if response.ok:
-            with open(local_path, "wb") as local_file:
-                local_file.write(response.content)
-            self.file = filename
-            self.pages = self.get_book_length(local_path)
-            return True
-        else:
+
+        if not response.ok:
             print(f"Unable to download {self.file}")
             return False
 
+        with open(local_path, "wb") as local_file:
+            local_file.write(response.content)
+        self.file = filename
+        self.pages = self.get_book_length(local_path)
+        return True
+
     def get_book_length(self, path):
+        """Read a PDF to determine the number of pages.
+
+        Parameters
+        ----------
+        path : str
+            The path to the PDF.
+
+        Returns
+        -------
+        int
+            The number of pages in the PDF.
+
+        """
         reader = PdfReader(path)
         return len(reader.pages)
