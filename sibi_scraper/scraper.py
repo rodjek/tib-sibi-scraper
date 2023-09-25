@@ -25,18 +25,18 @@ class Scraper:
 
         Parameters
         ----------
-        class_ : str
-            Either a class number or "all" to scrape all classes.
+        class_ : obj:`list` of str
+            A list of class numbers or "all" to scrape all classes.
         book_list_file : str
             The path to the book list CSV.
 
         """
         self.book_list = BookList(book_list_file)
 
-        if class_ == "all":
+        if "all" in class_:
             self.classes = self.CLASSES[1:]
         else:
-            self.classes = [class_]
+            self.classes = class_
 
     def run(self):
         """Run the scraper.

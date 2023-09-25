@@ -11,8 +11,8 @@ def main():
         prog="sibi_scraper",
         description="Scrape books from SIBI for TIB.")
     parser.add_argument("-c", "--class", choices=Scraper.CLASSES,
-                        default="all", dest="classes",
-                        help="the level of books to scrape")
+                        dest="classes", nargs="+", type=str,
+                        help="the level of books to scrape", default=["all"])
     parser.add_argument("--debug", action="store_true", dest="debug",
                         help="Enable debug logging")
     args = parser.parse_args()
