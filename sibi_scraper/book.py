@@ -1,4 +1,5 @@
 # pylint: disable=too-many-arguments
+import datetime
 import logging
 import os
 import urllib.parse
@@ -13,8 +14,12 @@ class Book:
 
     Attributes
     ----------
+    category : str
+        The type of book (e.g. Textbook).
     class_ : str
         The school class that the book is for.
+    date_downloaded : str
+        A human readable date and time when the book was downloaded.
     edition : str
         The edition of the book.
     english_title : str
@@ -31,13 +36,18 @@ class Book:
     """
 
     def __init__(self, title=None, class_=None, isbn=None, edition=None,
-                 file=None, english_title=None, pages=None):
+                 file=None, english_title=None, pages=None,
+                 date_downloaded=None, category=None):
         """Initialise a Book from known values.
 
         Parameters
         ----------
+        category : str
+            The type of book (e.g. Textbook).
         class_ : str
             The school class that the book is for.
+        date_downloaded : str
+            A human readable date and time when the book was downloaded.
         edition : str
             The edition of the book.
         english_title : str
@@ -60,6 +70,8 @@ class Book:
         self.edition = edition
         self.file = file
         self.pages = pages
+        self.date_downloaded = date_downloaded
+        self.category = category
 
     @classmethod
     def from_api(cls, json_blob):
@@ -82,14 +94,17 @@ class Book:
             otherwise None.
 
         """
+        now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         new_book = cls(
             title=json_blob['title'],
             class_=json_blob['class'],
             isbn=json_blob['isbn'],
             edition=json_blob['edition'],
             file=json_blob['attachment'],
+            date_downloaded=now,
         )
 
+        new_book.set_category(json_blob['category'])
         new_book.translate_title()
 
         try:
@@ -105,6 +120,30 @@ class Book:
         translator = googletrans.Translator()
         self.english_title = translator.translate(
             self.title, src='id', dest='en').text
+
+    def set_category(self, category):
+        """Translate the Book category from the API response.
+
+        Parameters
+        ----------
+        category : str
+            The category string as returned by the API: buku_sekolah_penggerak,
+            buku_teks, buku_non_teks.
+
+        Returns
+        -------
+        str
+            Returns the translated category or "Unknown" if the category could
+            not be translated.
+
+        """
+        categories = {
+            'buku_sekolah_penggerak': 'Curriculum Text',
+            'buku_teks': 'Text',
+            'buku_non_teks': 'Non-text',
+        }
+
+        self.category = categories.get(category, 'Unknown')
 
     def __repr__(self):
         class_name = type(self).__name__

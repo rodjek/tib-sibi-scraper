@@ -23,6 +23,8 @@ class BookList:
         'File Name',
         'Pages',
         'English Title',
+        'Date Downloaded',
+        'Category',
     ]
 
     def __init__(self, path):
@@ -43,7 +45,7 @@ class BookList:
             print("not exist")
             return
 
-        with open(self.path, 'r', newline='', encoding='utf-8') as csvfile:
+        with open(self.path, newline='', encoding='utf-8') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
                 book = Book(
@@ -54,6 +56,8 @@ class BookList:
                     file=row['File Name'],
                     pages=row['Pages'],
                     english_title=row['English Title'],
+                    date_downloaded=row['Date Downloaded'],
+                    category=row['Category'],
                 )
                 self.books.append(book)
 
@@ -88,6 +92,8 @@ class BookList:
             book.file,
             book.pages,
             book.english_title,
+            book.date_downloaded,
+            book.category,
         ]
 
         return dict(zip(self._csv_fields, values))
