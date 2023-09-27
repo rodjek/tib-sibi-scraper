@@ -2,6 +2,8 @@ import logging
 import time
 from sibi_scraper.book import Book
 from sibi_scraper.book_list import BookList
+from sibi_scraper.errors import ScraperError
+from sibi_scraper.failure_list import FailureList
 from sibi_scraper.web import Session
 
 
@@ -24,10 +26,11 @@ class Scraper:
     categories = {
         "curriculum": f"{api_host}/api/catalogue/getPenggerakTextBooks",
         "text": f"{api_host}/api/catalogue/getTextBooks",
-        "non_text": f"{api_host}/api/catalogue/getNonTextBooks",
     }
+    NON_TEXT_ENDPOINT = f"{api_host}/api/catalogue/getNonTextBooks",
 
-    def __init__(self, text_classes, non_text_levels, book_list_file):
+    def __init__(self, text_classes, non_text_levels, book_list_file,
+                 failure_list_file):
         """Initialise a new Scraper.
 
         Parameters
@@ -36,11 +39,14 @@ class Scraper:
             A list of class numbers or "all" to scrape all classes.
         book_list_file : str
             The path to the book list CSV.
+        failure_list_file : str
+            The path to the failure list CSV.
         non_text_levels : obj:`list` of str
             A list of levels or "all" to scrape all levels of non-text books.
 
         """
         self.book_list = BookList(book_list_file)
+        self.failure_list = FailureList(failure_list_file)
         self.classes = []
         self.non_text_levels = []
 
@@ -70,6 +76,7 @@ class Scraper:
 
         """
         self.book_list.load()
+        self.failure_list.load()
 
         for class_ in self.classes:
             for category in self.categories.keys():
@@ -78,9 +85,15 @@ class Scraper:
                 for book_json in found_books['results']:
                     if not self.book_list.exists(book_json['title']):
                         logging.info("New book: %s", book_json['title'])
-                        new_book = Book.from_api(book_json)
-                        if new_book:
-                            self.book_list.add(new_book)
+                        try:
+                            new_book = Book.from_api(book_json)
+                            if new_book:
+                                self.book_list.add(new_book)
+                                if self.failure_list.exists(new_book.title):
+                                    self.failure_list.remove(new_book.title)
+                        except ScraperError as e:
+                            logging.warning(e.message)
+                            self.failure_list.add(e.title, e.message)
                         time.sleep(10)
 
         for level in self.non_text_levels:
@@ -89,11 +102,18 @@ class Scraper:
             for book_json in found_books['results']:
                 if not self.book_list.exists(book_json['title']):
                     logging.info("New book: %s", book_json['title'])
-                    new_book = Book.from_api(book_json)
-                    if new_book:
-                        self.book_list.add(new_book)
+                    try:
+                        new_book = Book.from_api(book_json)
+                        if new_book:
+                            self.book_list.add(new_book)
+                            if self.failure_list.exists(new_book.title):
+                                self.failure_list.remove(new_book.title)
+                    except ScraperError as e:
+                        logging.warning(e.message)
+                        self.failure_list.add(e.title, e.message)
                     time.sleep(10)
 
+        self.failure_list.save()
         self.book_list.save()
 
     def search_for_books(self, class_, category):
@@ -143,7 +163,7 @@ class Scraper:
 
         """
         response = Session().session.get(
-            self.categories["non_text"],
+            self.NON_TEXT_ENDPOINT,
             params={
                 "limit": 2000,
                 "type_pdf": "",

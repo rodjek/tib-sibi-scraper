@@ -1,5 +1,6 @@
 /__pycache__/
 /sibi_book_list.csv
+/sibi_failures.csv
 /books/
 /poetry.lock
 *.pyc

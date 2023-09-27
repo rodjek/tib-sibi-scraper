@@ -20,6 +20,10 @@ def main():
                         help="Enable debug logging")
     args = parser.parse_args()
 
+    old_book_list = "book_list.csv"
+    book_list = "sibi_book_list.csv"
+    failure_list = "sibi_failures.csv"
+
     if args.debug:
         logging.basicConfig(level=logging.DEBUG)
     else:
@@ -27,10 +31,10 @@ def main():
                             level=logging.INFO)
         logging.getLogger("httpx").setLevel(logging.WARNING)
 
-    if os.path.isfile("book_list.csv"):
-        migrate_book_list("book_list.csv", "sibi_book_list.csv")
+    if os.path.isfile(old_book_list):
+        migrate_book_list(old_book_list, book_list)
 
-    Scraper(args.classes, args.non_text_levels, "sibi_book_list.csv").run()
+    Scraper(args.classes, args.non_text_levels, book_list, failure_list).run()
 
 
 def migrate_book_list(old_list, new_list):

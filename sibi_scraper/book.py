@@ -1,11 +1,11 @@
 # pylint: disable=too-many-arguments
 import datetime
-import logging
 import os
 import urllib.parse
 import googletrans
 import httpx
 import PyPDF2
+from sibi_scraper.errors import ScraperError
 from sibi_scraper.web import Session
 
 
@@ -117,8 +117,8 @@ class Book:
             if new_book.download_file():
                 return new_book
         except httpx.ReadTimeout:
-            logging.warning("Timed out downloading %s",
-                            json_blob['attachment'])
+            raise ScraperError(params["title"],
+                               f"Timed out downloading {params['file']}")
         return None
 
     def translate_title(self):
@@ -170,8 +170,7 @@ class Book:
 
         """
         if self.file in ['', None]:
-            logging.warning("Blank URL: %s", self.title)
-            return False
+            raise ScraperError(self.title, f"Blank URL: {self.title}")
 
         filename = os.path.basename(urllib.parse.unquote(self.file))
         local_path = os.path.join("books", self.class_, filename)
@@ -183,8 +182,8 @@ class Book:
         response = Session().session.get(self.file)
 
         if not response.ok:
-            logging.warning("Unable to download: %s", self.file)
-            return False
+            raise ScraperError(self.title,
+                               f"Unable to download {self.file}: error {response.status_code}")
 
         with open(local_path, "wb") as local_file:
             local_file.write(response.content)
@@ -192,8 +191,7 @@ class Book:
         try:
             self.pages = self.get_book_length(local_path)
         except PyPDF2.errors.PdfReadError:
-            logging.warning("Corrupt PDF: %s", self.file)
-            return False
+            raise ScraperError(self.title, f"Corrupt PDF: {self.file}")
 
         self.file = filename
         return True
