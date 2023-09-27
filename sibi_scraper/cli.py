@@ -12,7 +12,10 @@ def main():
         description="Scrape books from SIBI for TIB.")
     parser.add_argument("-c", "--class", choices=Scraper.CLASSES,
                         dest="classes", nargs="+", type=str,
-                        help="the level of books to scrape", default=["all"])
+                        help="the class of text books to scrape")
+    parser.add_argument("-n", "--nontext", choices=Scraper.NON_TEXT_LEVELS,
+                        dest="non_text_levels", nargs="+", type=str,
+                        help="the level of non-text books to scrape")
     parser.add_argument("--debug", action="store_true", dest="debug",
                         help="Enable debug logging")
     args = parser.parse_args()
@@ -27,7 +30,7 @@ def main():
     if os.path.isfile("book_list.csv"):
         migrate_book_list("book_list.csv", "sibi_book_list.csv")
 
-    Scraper(args.classes, "sibi_book_list.csv").run()
+    Scraper(args.classes, args.non_text_levels, "sibi_book_list.csv").run()
 
 
 def migrate_book_list(old_list, new_list):

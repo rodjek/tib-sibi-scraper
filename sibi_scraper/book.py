@@ -95,14 +95,20 @@ class Book:
 
         """
         now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        new_book = cls(
-            title=json_blob['title'],
-            class_=json_blob['class'],
-            isbn=json_blob['isbn'],
-            edition=json_blob['edition'],
-            file=json_blob['attachment'],
-            date_downloaded=now,
-        )
+        params = {
+            "title": json_blob["title"],
+            "isbn": json_blob["isbn"],
+            "edition": json_blob["edition"],
+            "file": json_blob["attachment"],
+            "date_downloaded": now,
+        }
+
+        if json_blob.get("class", '') in ['', None]:
+            params["class_"] = json_blob["level"]
+        else:
+            params["class_"] = json_blob["class"]
+
+        new_book = cls(**params)
 
         new_book.set_category(json_blob['category'])
         new_book.translate_title()
@@ -163,6 +169,10 @@ class Book:
             False.
 
         """
+        if self.file in ['', None]:
+            logging.warning("Blank URL: %s", self.title)
+            return False
+
         filename = os.path.basename(urllib.parse.unquote(self.file))
         local_path = os.path.join("books", self.class_, filename)
         download_dir = os.path.dirname(local_path)
