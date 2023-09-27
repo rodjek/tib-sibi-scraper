@@ -18,6 +18,12 @@ pypdf2 = "^3.0.1"
 [tool.poetry.group.dev.dependencies]
 pylint = "^2.17.5"
 ipdb = "^0.13.13"
+ruff = "^0.0.291"
+pdbpp = "^0.10.3"
+
+[tool.ruff]
+src = ["sibi_scraper"]
+select = ["E", "W", "F", "UP", "N"]
 
 [build-system]
 requires = ["poetry-core"]
