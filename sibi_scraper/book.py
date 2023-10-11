@@ -202,7 +202,7 @@ class Book:
         local_path = Path("books") / self.class_ / filename
         download_dir = local_path.parent
 
-        if not download_dir.is_dir:
+        if not download_dir.is_dir():
             download_dir.mkdir(parents=True)
 
         response = Session().session.get(self.file)
