@@ -70,6 +70,9 @@ def migrate_book_list(old_list, new_list):
 
 
 def add_type_column(book_list):
+    if not book_list.is_file():
+        return
+
     new_file = Path(f"{book_list}.new")
 
     with book_list.open(newline="", encoding="utf-8") as csv_input:
