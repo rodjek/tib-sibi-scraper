@@ -91,6 +91,7 @@ def add_type_column(book_list):
             writer = csv.writer(csv_output)
             writer.writerows(all_rows)
 
+    book_list.unlink()
     new_file.rename(book_list)
 
 
