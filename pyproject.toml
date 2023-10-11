@@ -14,6 +14,7 @@ python = "^3.11"
 requests = "^2.31.0"
 googletrans-py = "^4.0.0"
 pypdf2 = "^3.0.1"
+tenacity = "^8.2.3"
 
 [tool.poetry.group.dev.dependencies]
 pylint = "^2.17.5"
@@ -23,7 +24,50 @@ pdbpp = "^0.10.3"
 
 [tool.ruff]
 src = ["sibi_scraper"]
-select = ["E", "W", "F", "UP", "N"]
+include = ["sibi_scraper/**/*.py"]
+ignore = ["PLR0913"]
+select = [
+  "E",
+  "W",
+  "F",
+  "UP",
+  "N",
+  "I",
+  "YTT",
+  "ASYNC",
+  "S",
+  "BLE",
+#  "D",
+#  "ANN",
+  "FBT",
+  "B",
+  "A",
+  "COM",
+  "C4",
+  "T10",
+  "EM",
+  "ISC",
+  "ICN",
+  "G",
+  "INP",
+  "PIE",
+  "T20",
+  "PYI",
+  "Q",
+  "RSE",
+  "RET",
+  "SLF",
+  "SIM",
+  "ARG",
+  "PTH",
+  "TD",
+  "FIX",
+  "ERA",
+  "PL",
+  "TRY",
+  "PERF",
+  "RUF",
+]
 
 [build-system]
 requires = ["poetry-core"]

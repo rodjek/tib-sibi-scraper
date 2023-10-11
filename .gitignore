@@ -2,5 +2,6 @@
 /sibi_book_list.csv
 /sibi_failures.csv
 /books/
+/audiobooks/
 /poetry.lock
 *.pyc

@@ -2,7 +2,8 @@ import argparse
 import csv
 import datetime
 import logging
-import os
+from pathlib import Path
+
 from sibi_scraper.scraper import Scraper
 
 
@@ -20,9 +21,9 @@ def main():
                         help="Enable debug logging")
     args = parser.parse_args()
 
-    old_book_list = "book_list.csv"
-    book_list = "sibi_book_list.csv"
-    failure_list = "sibi_failures.csv"
+    old_book_list = Path("book_list.csv")
+    book_list = Path("sibi_book_list.csv")
+    failure_list = Path("sibi_failures.csv")
 
     if args.debug:
         logging.basicConfig(level=logging.DEBUG)
@@ -31,39 +32,66 @@ def main():
                             level=logging.INFO)
         logging.getLogger("httpx").setLevel(logging.WARNING)
 
-    if os.path.isfile(old_book_list):
+    # Temp migrations
+    if old_book_list.is_file():
         migrate_book_list(old_book_list, book_list)
+    add_type_column(book_list)
 
     Scraper(args.classes, args.non_text_levels, book_list, failure_list).run()
 
 
 def migrate_book_list(old_list, new_list):
-    with (open(old_list, newline='', encoding='utf-8') as csv_input,
-          open(new_list, 'w', newline='', encoding='utf-8') as csv_output):
+    with (old_list.open(newline="", encoding="utf-8") as csv_input,
+          new_list.open("w", newline="", encoding="utf-8") as csv_output):
         writer = csv.writer(csv_output)
         reader = csv.reader(csv_input)
 
         all_rows = []
         row = next(reader)
-        row.append('Date Downloaded')
-        row.append('Category')
+        row.append("Date Downloaded")
+        row.append("Category")
         all_rows.append(row)
 
         for row in reader:
-            path = os.path.join('books', row[1], row[4])
-            if not os.path.isfile(path):
-                row.append('')
+            path = Path("books") / row[1] / row[4]
+            if not path.is_file():
+                row.append("")
+            else:
+                file_ctime = path.stat().st_ctime
+                downloaded_on = datetime.datetime.fromtimestamp(file_ctime)
+                row.append(downloaded_on.strftime("%Y-%m-%d %H:%M:%S"))
 
-            file_stat = os.stat(path)
-            downloaded_on = datetime.datetime.fromtimestamp(file_stat.st_ctime)
-            row.append(downloaded_on.strftime('%Y-%m-%d %H:%M:%S'))
-
-            row.append('Curriculum Text')
+            row.append("Curriculum Text")
             all_rows.append(row)
 
         writer.writerows(all_rows)
 
-    os.remove(old_list)
+    old_list.unlink()
+
+
+def add_type_column(book_list):
+    new_file = Path(f"{book_list}.new")
+
+    with book_list.open(newline="", encoding="utf-8") as csv_input:
+        reader = csv.reader(csv_input)
+        all_rows = []
+        row = next(reader)
+
+        if "Type" in row:
+            return
+
+        row.append("Type")
+        all_rows.append(row)
+
+        for row in reader:
+            row.append("PDF")
+            all_rows.append(row)
+
+        with new_file.open("w", newline="", encoding="utf-8") as csv_output:
+            writer = csv.writer(csv_output)
+            writer.writerows(all_rows)
+
+    new_file.rename(book_list)
 
 
 if __name__ == "__main__":

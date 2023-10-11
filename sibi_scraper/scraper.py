@@ -1,5 +1,7 @@
 import logging
 import time
+
+from sibi_scraper.audio_book import AudioBook
 from sibi_scraper.book import Book
 from sibi_scraper.book_list import BookList
 from sibi_scraper.errors import ScraperError
@@ -27,7 +29,8 @@ class Scraper:
         "curriculum": f"{api_host}/api/catalogue/getPenggerakTextBooks",
         "text": f"{api_host}/api/catalogue/getTextBooks",
     }
-    NON_TEXT_ENDPOINT = f"{api_host}/api/catalogue/getNonTextBooks",
+    NON_TEXT_ENDPOINT = f"{api_host}/api/catalogue/getNonTextBooks"
+    BOOK_TYPES = ["pdf", "audio"]
 
     def __init__(self, text_classes, non_text_levels, book_list_file,
                  failure_list_file):
@@ -79,44 +82,62 @@ class Scraper:
         self.failure_list.load()
 
         for class_ in self.classes:
-            for category in self.categories.keys():
-                found_books = self.search_for_books(class_, category)
+            for category in self.categories:
+                for type_ in self.BOOK_TYPES:
+                    found_books = self.search_for_books(
+                        class_, category, type_)
 
-                for book_json in found_books['results']:
-                    if not self.book_list.exists(book_json['title']):
-                        logging.info("New book: %s", book_json['title'])
-                        try:
-                            new_book = Book.from_api(book_json)
-                            if new_book:
-                                self.book_list.add(new_book)
-                                if self.failure_list.exists(new_book.title):
-                                    self.failure_list.remove(new_book.title)
-                        except ScraperError as e:
-                            logging.warning(e.message)
-                            self.failure_list.add(e.title, e.message)
-                        time.sleep(10)
+                    for book_json in found_books["results"]:
+                        if book_json["type"] == "audio":
+                            self.get_audio_book(book_json)
+                        else:
+                            self.get_book(book_json)
 
         for level in self.non_text_levels:
             found_books = self.search_for_non_text_books(level)
 
-            for book_json in found_books['results']:
-                if not self.book_list.exists(book_json['title']):
-                    logging.info("New book: %s", book_json['title'])
-                    try:
-                        new_book = Book.from_api(book_json)
-                        if new_book:
-                            self.book_list.add(new_book)
-                            if self.failure_list.exists(new_book.title):
-                                self.failure_list.remove(new_book.title)
-                    except ScraperError as e:
-                        logging.warning(e.message)
-                        self.failure_list.add(e.title, e.message)
-                    time.sleep(10)
+            for book_json in found_books["results"]:
+                self.get_book(book_json)
 
         self.failure_list.save()
         self.book_list.save()
 
-    def search_for_books(self, class_, category):
+    def get_book(self, book_json):
+        if self.book_list.exists(book_json["title"]):
+            return
+
+        logging.info("New book: %s", book_json["title"])
+
+        try:
+            new_book = Book.from_api(book_json)
+
+            if not new_book:
+                return
+
+            self.book_list.add(new_book)
+            if self.failure_list.exists(new_book.title):
+                self.failure_list.remove(new_book.title)
+        except ScraperError as e:
+            logging.warning(e.message)
+            self.failure_list.add(e.title, e.message)
+
+        time.sleep(10)
+
+    def get_audio_book(self, book_json):
+        try:
+            new_book = AudioBook.from_api(book_json)
+
+            if not new_book:
+                return
+
+            self.book_list.add(new_book)
+            if self.failure_list.exists(new_book.title):
+                self.failure_list.remove(new_book.title)
+        except ScraperError as e:
+            logging.warning(e.message)
+            self.failure_list.add(e.title, e.message)
+
+    def search_for_books(self, class_, category, type_):
         """Query the SIBI API for the text books for a given class.
 
         Parameters
@@ -125,6 +146,8 @@ class Scraper:
             The class number, 1 to 12.
         category : str
             The category of text books to scrape, "curriculum" or "text".
+        type_ : str
+            The type of book to scrape, "pdf" or "audio".
 
         Returns
         -------
@@ -137,9 +160,9 @@ class Scraper:
             self.categories[category],
             params={
                 "limit": 2000,
-                "type_pdf": "",
+                f"type_{type_}": "",
                 f"class_{class_}": "",
-            }
+            },
         )
 
         if response.ok:
@@ -168,7 +191,7 @@ class Scraper:
                 "limit": 2000,
                 "type_pdf": "",
                 f"level_{level}": "",
-            }
+            },
         )
 
         if response.ok:

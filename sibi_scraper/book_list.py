@@ -1,5 +1,5 @@
 import csv
-import os
+
 from sibi_scraper.book import Book
 
 
@@ -16,15 +16,16 @@ class BookList:
     """
 
     _csv_fields = [
-        'Book List Title',
-        'Class',
-        'ISBN',
-        'Edition',
-        'File Name',
-        'Pages',
-        'English Title',
-        'Date Downloaded',
-        'Category',
+        "Book List Title",
+        "Class",
+        "ISBN",
+        "Edition",
+        "File Name",
+        "Pages",
+        "English Title",
+        "Date Downloaded",
+        "Category",
+        "Type",
     ]
 
     def __init__(self, path):
@@ -41,29 +42,29 @@ class BookList:
 
     def load(self):
         """Load the data from the CSV file into the BookList."""
-        if not os.path.isfile(self.path):
-            print("not exist")
+        if not self.path.is_file():
             return
 
-        with open(self.path, newline='', encoding='utf-8') as csvfile:
+        with self.path.open(newline="", encoding="utf-8") as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
                 book = Book(
-                    title=row['Book List Title'],
-                    class_=row['Class'],
-                    isbn=row['ISBN'],
-                    edition=row['Edition'],
-                    file=row['File Name'],
-                    pages=row['Pages'],
-                    english_title=row['English Title'],
-                    date_downloaded=row['Date Downloaded'],
-                    category=row['Category'],
+                    title=row["Book List Title"],
+                    class_=row["Class"],
+                    isbn=row["ISBN"],
+                    edition=row["Edition"],
+                    file=row["File Name"],
+                    pages=row["Pages"],
+                    english_title=row["English Title"],
+                    date_downloaded=row["Date Downloaded"],
+                    category=row["Category"],
+                    type_=row["Type"],
                 )
                 self.books.append(book)
 
     def save(self):
         """Save the BookList into the CSV file."""
-        with open(self.path, 'w', newline='', encoding='utf-8') as csvfile:
+        with self.path.open("w", newline="", encoding="utf-8") as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=self._csv_fields)
             writer.writeheader()
             for book in self.books:
@@ -94,6 +95,7 @@ class BookList:
             book.english_title,
             book.date_downloaded,
             book.category,
+            book.type_,
         ]
 
         return dict(zip(self._csv_fields, values))

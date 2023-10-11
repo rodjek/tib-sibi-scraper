@@ -1,11 +1,10 @@
 import csv
-import os
 
 
 class FailureList:
     _csv_fields = [
-        'Title',
-        'Failure',
+        "Title",
+        "Failure",
     ]
 
     def __init__(self, path):
@@ -13,16 +12,21 @@ class FailureList:
         self.failures = {}
 
     def load(self):
-        if not os.path.isfile(self.path):
+        if not self.path.is_file():
             return
 
-        with open(self.path, newline='', encoding='utf-8') as csvfile:
+        with self.path.open(newline="", encoding="utf-8") as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
-                self.failures[row['Title']] = row['Failure']
+                self.failures[row["Title"]] = row["Failure"]
 
     def save(self):
-        with open(self.path, 'w', newline='', encoding='utf-8') as csvfile:
+        if not self.failures:
+            if self.path.is_file():
+                self.path.unlink()
+            return
+
+        with self.path.open("w", newline="", encoding="utf-8") as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=self._csv_fields)
             writer.writeheader()
             for title in self.failures:
@@ -38,3 +42,6 @@ class FailureList:
 
     def exists(self, key):
         return key in self.failures
+
+    def isempty(self):
+        return not self.failures

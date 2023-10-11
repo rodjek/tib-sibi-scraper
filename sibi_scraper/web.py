@@ -16,9 +16,3 @@ class Session:
     def __init__(self):
         self.session = requests.Session()
         self.session.headers.update({"User-Agent": self._ua})
-
-# session = requests.Session()
-# session.headers.update({'User-Agent': ua})
-# r = session.get(
-#    'https://api.buku.kemdikbud.go.id/api/catalogue/getPenggerakTextBooks',
-#    params: {'limit': 2000, 'type_pdf': '', 'level_paud': ''})
