@@ -24,6 +24,10 @@ class AudioBookList:
                 self.files.append(row)
 
     def save(self):
+        parent = self.path.parent
+        if not parent.is_dir():
+            parent.mkdir(parents=True)
+
         with self.path.open("w", newline="", encoding="utf-8") as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=self._csv_fields)
             writer.writeheader()

@@ -63,6 +63,10 @@ class BookList:
                 self.books.append(book)
 
     def save(self):
+        parent = self.path.parent
+        if not parent.is_dir():
+            parent.mkdir(parents=True)
+
         """Save the BookList into the CSV file."""
         with self.path.open("w", newline="", encoding="utf-8") as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=self._csv_fields)
