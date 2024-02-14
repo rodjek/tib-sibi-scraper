@@ -99,8 +99,6 @@ class Scraper:
             for book_json in found_books["results"]:
                 self.get_book(book_json)
 
-        self.failure_list.save()
-        self.book_list.save()
 
     def get_book(self, book_json):
         if self.book_list.exists(book_json["title"]):
@@ -115,11 +113,14 @@ class Scraper:
                 return
 
             self.book_list.add(new_book)
+            self.book_list.save()
             if self.failure_list.exists(new_book.title):
                 self.failure_list.remove(new_book.title)
+                self.failure_list.save()
         except ScraperError as e:
             logging.warning(e.message)
             self.failure_list.add(e.title, e.message)
+            self.failure_list.save()
 
         time.sleep(10)
 
@@ -131,11 +132,14 @@ class Scraper:
                 return
 
             self.book_list.add(new_book)
+            self.book_list.save()
             if self.failure_list.exists(new_book.title):
                 self.failure_list.remove(new_book.title)
+                self.failure_list.save()
         except ScraperError as e:
             logging.warning(e.message)
             self.failure_list.add(e.title, e.message)
+            self.failure_list.save()
 
     def search_for_books(self, class_, category, type_):
         """Query the SIBI API for the text books for a given class.
