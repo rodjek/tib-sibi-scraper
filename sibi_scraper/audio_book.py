@@ -84,7 +84,8 @@ class AudioBook(Book):
         except httpx.HTTPError as e:
             raise ScraperError(self.title, e.message) from e
 
-        download_dir = Path("audiobooks") / self.class_ / slug
+        self.file = self.safe_path(slug)
+        download_dir = Path("audiobooks") / self.class_ / self.file
         if not download_dir.is_dir():
             download_dir.mkdir(parents=True)
 

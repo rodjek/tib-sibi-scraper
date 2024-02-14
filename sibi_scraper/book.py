@@ -2,6 +2,7 @@
 import datetime
 import urllib.parse
 from pathlib import Path
+import re
 
 import googletrans
 import httpx
@@ -200,7 +201,7 @@ class Book:
         if self.file in ["", None]:
             raise ScraperError(self.title, f"Blank URL: {self.title}")
 
-        filename = Path(urllib.parse.unquote(self.file)).name
+        filename = self.safe_path(Path(urllib.parse.unquote(self.file)).name)
         local_path = Path("books") / self.class_ / filename
         download_dir = local_path.parent
 
@@ -241,3 +242,20 @@ class Book:
         """
         reader = PyPDF2.PdfReader(path)
         return len(reader.pages)
+
+    def safe_path(self, name):
+        """Convert a string into a safe path name.
+
+        Parameters
+        ----------
+        name : str
+            The string to convert.
+
+        Returns
+        -------
+        str
+            The string with invalid path name characters stripped out.
+
+        """
+
+        return re.sub(r"[\>\<\"\:\/\\\*\?\|]", '', name)
