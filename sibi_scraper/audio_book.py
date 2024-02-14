@@ -75,7 +75,8 @@ class AudioBook(Book):
            stop=stop_after_attempt(3),
            retry=retry_if_exception_type((
                httpx.ConnectError,
-               httpx.ReadTimeout)),
+               httpx.ReadTimeout,
+               TimeoutError)),
            reraise=True)
     def download_audio_files(self, slug):
         try:
@@ -131,7 +132,8 @@ class AudioBook(Book):
            stop=stop_after_attempt(3),
            retry=retry_if_exception_type((
                httpx.ConnectError,
-               httpx.ReadTimeout)),
+               httpx.ReadTimeout,
+               TimeoutError)),
            reraise=True)
     def download_audio_file(self, title, attachment, chapter, sub_chapter,
                             path):

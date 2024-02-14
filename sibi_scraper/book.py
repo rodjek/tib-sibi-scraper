@@ -140,7 +140,8 @@ class Book:
            stop=stop_after_attempt(3),
            retry=retry_if_exception_type((
                httpx.ConnectError,
-               httpx.ReadTimeout)),
+               httpx.ReadTimeout,
+               TimeoutError)),
            reraise=True)
     def translate(self, text):
         """Translate the given text to English using Google Translate."""
@@ -179,7 +180,8 @@ class Book:
            stop=stop_after_attempt(3),
            retry=retry_if_exception_type((
                httpx.ConnectError,
-               httpx.ReadTimeout)),
+               httpx.ReadTimeout,
+               TimeoutError)),
            reraise=True)
     def download_file(self):
         """Download the book PDF.
