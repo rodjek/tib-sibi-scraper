@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sibi-scraper"
-version = "0.1.9"
+version = "0.1.10"
 description = ""
 authors = ["Tim Sharpe <tim@sharpe.id.au>"]
 readme = "README.md"
