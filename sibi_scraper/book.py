@@ -1,8 +1,8 @@
 # pylint: disable=too-many-arguments
 import datetime
+import re
 import urllib.parse
 from pathlib import Path
-import re
 
 import googletrans
 import httpx
@@ -258,4 +258,4 @@ class Book:
 
         """
 
-        return re.sub(r"[\>\<\"\:\/\\\*\?\|]", '', name)
+        return re.sub(r"[\>\<\"\:\/\\\*\?\|]", "", name)
