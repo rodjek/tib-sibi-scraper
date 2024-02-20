@@ -99,7 +99,6 @@ class Scraper:
             for book_json in found_books["results"]:
                 self.get_book(book_json)
 
-
     def get_book(self, book_json):
         if self.book_list.exists(book_json["title"]):
             return
@@ -169,10 +168,13 @@ class Scraper:
             },
         )
 
+        logging.debug(response)
+        logging.debug(response.text)
+
         if response.ok:
             return response.json()
 
-        return {}
+        return {"results": []}
 
     def search_for_non_text_books(self, level):
         """Query the SIBI API for the non-text books for a given level.
@@ -198,7 +200,10 @@ class Scraper:
             },
         )
 
+        logging.debug(response)
+        logging.debug(response.text)
+
         if response.ok:
             return response.json()
 
-        return {}
+        return {"results": []}

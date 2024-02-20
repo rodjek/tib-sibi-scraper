@@ -1,4 +1,5 @@
 import csv
+import logging
 
 from sibi_scraper.book import Book
 
@@ -37,7 +38,7 @@ class BookList:
             The path to the CSV file where the book list is stored.
 
         """
-        self.path = path
+        self.path = path.resolve()
         self.books = []
 
     def load(self):
@@ -45,6 +46,7 @@ class BookList:
         if not self.path.is_file():
             return
 
+        logging.debug("Loading %s", self.path)
         with self.path.open(newline="", encoding="utf-8") as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
@@ -63,11 +65,13 @@ class BookList:
                 self.books.append(book)
 
     def save(self):
+        """Save the BookList into the CSV file."""
+        logging.debug("Saving %s", self.path)
+
         parent = self.path.parent
         if not parent.is_dir():
             parent.mkdir(parents=True)
 
-        """Save the BookList into the CSV file."""
         with self.path.open("w", newline="", encoding="utf-8") as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=self._csv_fields)
             writer.writeheader()
