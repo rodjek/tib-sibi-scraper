@@ -101,6 +101,10 @@ class Scraper:
 
     def get_book(self, book_json):
         if self.book_list.exists(book_json["title"]):
+            book = self.book_list.get(book_json["title"])
+            if not book.level:
+                book.level = book_json["level"]
+                self.book_list.save()
             return
 
         logging.info("New book: %s", book_json["title"])
@@ -130,11 +134,19 @@ class Scraper:
             if not new_book:
                 return
 
-            self.book_list.add(new_book)
-            self.book_list.save()
             if self.failure_list.exists(new_book.title):
                 self.failure_list.remove(new_book.title)
                 self.failure_list.save()
+
+            if self.book_list.exists(book_json["title"]):
+                book = self.book_list.get(book_json["title"])
+                if not book.level:
+                    book.level = book_json["level"]
+                    self.book_list.save()
+                return
+
+            self.book_list.add(new_book)
+            self.book_list.save()
         except ScraperError as e:
             logging.warning(e.message)
             self.failure_list.add(e.title, e.message)

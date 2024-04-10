@@ -27,6 +27,7 @@ class BookList:
         "Date Downloaded",
         "Category",
         "Type",
+        "Level",
     ]
 
     def __init__(self, path):
@@ -61,6 +62,7 @@ class BookList:
                     date_downloaded=row["Date Downloaded"],
                     category=row["Category"],
                     type_=row["Type"],
+                    level=row["Level"],
                 )
                 self.books.append(book)
 
@@ -104,6 +106,7 @@ class BookList:
             book.date_downloaded,
             book.category,
             book.type_,
+            book.level,
         ]
 
         return dict(zip(self._csv_fields, values))
@@ -135,3 +138,20 @@ class BookList:
 
         """
         self.books.append(new_book)
+
+    def get(self, title):
+        """Return a book from the book list.
+
+        Parameters
+        ----------
+        title : str
+            The title of the book to return.
+
+        Returns
+        -------
+        obj:`sibi_scraper.book.Book`
+            The named book.
+
+        """
+
+        return list(filter(lambda r: r.title == title, self.books))[0]
