@@ -81,6 +81,18 @@ class Scraper:
         self.book_list.load()
         self.failure_list.load()
 
+        if "1" in self.classes:
+            for category in self.categories:
+                for type_ in self.BOOK_TYPES:
+                    found_books = self.search_for_books(None, category, type_)
+                    non_class_books = list(filter(lambda r: r["class"] in ["", None], found_books["results"]))
+
+                    for book_json in non_class_books:
+                        if book_json["type"] == "audio":
+                            self.get_audio_book(book_json)
+                        else:
+                            self.get_book(book_json)
+
         for class_ in self.classes:
             for category in self.categories:
                 for type_ in self.BOOK_TYPES:
