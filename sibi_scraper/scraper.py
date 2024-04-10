@@ -175,6 +175,7 @@ class Scraper:
             self.categories[category],
             params={
                 "limit": 2000,
+                "order_by": "updated_at",
                 f"type_{type_}": "",
                 f"class_{class_}": "",
             },
@@ -185,6 +186,8 @@ class Scraper:
 
         if response.ok:
             return response.json()
+        else:
+            print(response)
 
         return {"results": []}
 
@@ -207,6 +210,7 @@ class Scraper:
             self.NON_TEXT_ENDPOINT,
             params={
                 "limit": 2000,
+                "order_by": "updated_at",
                 "type_pdf": "",
                 f"level_{level}": "",
             },
@@ -217,5 +221,7 @@ class Scraper:
 
         if response.ok:
             return response.json()
+        else:
+            print(response)
 
         return {"results": []}
