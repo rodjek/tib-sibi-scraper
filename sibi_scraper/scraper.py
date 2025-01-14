@@ -69,7 +69,7 @@ class Scraper:
             else:
                 self.non_text_levels = non_text_levels
 
-    def run(self):
+    def run(self, update_metadata_only=False):
         """Run the scraper.
 
         First, load the book list from the CSV file. Then iterate through the
@@ -89,9 +89,9 @@ class Scraper:
 
                     for book_json in non_class_books:
                         if book_json["type"] == "audio":
-                            self.get_audio_book(book_json)
+                            self.get_audio_book(book_json, update_metadata_only)
                         else:
-                            self.get_book(book_json)
+                            self.get_book(book_json, update_metadata_only)
 
         for class_ in self.classes:
             for category in self.categories:
@@ -101,22 +101,28 @@ class Scraper:
 
                     for book_json in found_books["results"]:
                         if book_json["type"] == "audio":
-                            self.get_audio_book(book_json)
+                            self.get_audio_book(book_json, update_metadata_only)
                         else:
-                            self.get_book(book_json)
+                            self.get_book(book_json, update_metadata_only)
 
         for level in self.non_text_levels:
             found_books = self.search_for_non_text_books(level)
 
             for book_json in found_books["results"]:
-                self.get_book(book_json)
+                self.get_book(book_json, update_metadata_only)
 
-    def get_book(self, book_json):
+    def get_book(self, book_json, update_metadata_only):
         if self.book_list.exists(book_json["title"]):
             book = self.book_list.get(book_json["title"])
             if not book.level:
                 book.level = book_json["level"]
                 self.book_list.save()
+            if not book.subject:
+                book.subject = book_json["subject"]
+                self.book_list.save()
+            return
+
+        if update_metadata_only:
             return
 
         logging.info("New book: %s", book_json["title"])
@@ -139,7 +145,20 @@ class Scraper:
 
         time.sleep(10)
 
-    def get_audio_book(self, book_json):
+    def get_audio_book(self, book_json, update_metadata_only):
+        if self.book_list.exists(book_json["title"]):
+            book = self.book_list.get(book_json["title"])
+            if not book.level:
+                book.level = book_json["level"]
+                self.book_list.save()
+            if not book.subject:
+                book.subject = book_json["subject"]
+                self.book_list.save()
+            return
+
+        if update_metadata_only:
+            return
+
         try:
             new_book = AudioBook.from_api(book_json)
 
@@ -149,13 +168,6 @@ class Scraper:
             if self.failure_list.exists(new_book.title):
                 self.failure_list.remove(new_book.title)
                 self.failure_list.save()
-
-            if self.book_list.exists(book_json["title"]):
-                book = self.book_list.get(book_json["title"])
-                if not book.level:
-                    book.level = book_json["level"]
-                    self.book_list.save()
-                return
 
             self.book_list.add(new_book)
             self.book_list.save()

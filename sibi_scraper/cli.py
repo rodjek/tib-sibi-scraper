@@ -18,6 +18,8 @@ def main():
                         help="the level of non-text books to scrape")
     parser.add_argument("--debug", action="store_true", dest="debug",
                         help="Enable debug logging")
+    parser.add_argument("--update-metadata-only", action="store_true",
+                        dest="update_metadata_only", help="Update CSV metadata only")
     args = parser.parse_args()
 
     book_list = Path("sibi_book_list.csv")
@@ -32,8 +34,9 @@ def main():
 
     # Temp migrations
     add_level_column(book_list)
+    add_subject_column(book_list)
 
-    Scraper(args.classes, args.non_text_levels, book_list, failure_list).run()
+    Scraper(args.classes, args.non_text_levels, book_list, failure_list).run(args.update_metadata_only)
 
 
 def add_level_column(book_list):
@@ -64,6 +67,33 @@ def add_level_column(book_list):
     book_list.unlink()
     new_file.rename(book_list)
 
+def add_subject_column(book_list):
+    if not book_list.is_file():
+        return
+
+    new_file = Path(f"{book_list}.new")
+
+    with book_list.open(newline="", encoding="utf-8") as csv_input:
+        reader = csv.reader(csv_input)
+        all_rows = []
+        row = next(reader)
+
+        if "Subject" in row:
+            return
+
+        row.append("Subject")
+        all_rows.append(row)
+
+        for row in reader:
+            row.append("")
+            all_rows.append(row)
+
+        with new_file.open("w", newline="", encoding="utf-8") as csv_output:
+            writer = csv.writer(csv_output)
+            writer.writerows(all_rows)
+
+    book_list.unlink()
+    new_file.rename(book_list)
 
 if __name__ == "__main__":
     main()

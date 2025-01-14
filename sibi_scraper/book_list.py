@@ -28,6 +28,7 @@ class BookList:
         "Category",
         "Type",
         "Level",
+        "Subject",
     ]
 
     def __init__(self, path):
@@ -63,6 +64,7 @@ class BookList:
                     category=row["Category"],
                     type_=row["Type"],
                     level=row["Level"],
+                    subject=row["Subject"],
                 )
                 self.books.append(book)
 
@@ -107,6 +109,7 @@ class BookList:
             book.category,
             book.type_,
             book.level,
+            book.subject,
         ]
 
         return dict(zip(self._csv_fields, values))

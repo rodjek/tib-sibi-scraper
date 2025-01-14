@@ -37,7 +37,8 @@ class AudioBook(Book):
             "date_downloaded": now,
             "type_": "Audio",
             "file": json_blob["slug"],
-            "level": json_blob["level"]
+            "level": json_blob["level"],
+            "subject": json_blob["subject"],
         }
 
         if json_blob.get("class", "") in ["", None]:

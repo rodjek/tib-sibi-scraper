@@ -45,13 +45,15 @@ class Book:
         The type of book (PDF or Audio).
     level : str
         The class level of the book.
+    subject : str
+        The subject of the book.
 
     """
 
     def __init__(self, title=None, class_=None, isbn=None, edition=None,
                  file=None, english_title=None, pages=None,
                  date_downloaded=None, category=None, type_=None,
-                 level=None):
+                 level=None, subject=None):
         """Initialise a Book from known values.
 
         Parameters
@@ -78,6 +80,8 @@ class Book:
             The type of book (PDF or Audio).
         level : str
             The class level of the book.
+        subject : str
+            The subject of the book.
 
         """
 
@@ -92,6 +96,7 @@ class Book:
         self.category = category
         self.type_ = type_
         self.level = level
+        self.subject = subject
 
     @classmethod
     def from_api(cls, json_blob):
@@ -121,6 +126,7 @@ class Book:
             "edition": json_blob["edition"],
             "file": json_blob["attachment"],
             "level": json_blob["level"],
+            "subject": json_blob["subject"],
             "date_downloaded": now,
             "type_": "PDF",
         }
